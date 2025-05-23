@@ -1,3 +1,6 @@
 fastapi
-uvicorn[standard]
-pydantic==2.11.3
+uvicorn
+google-genai
+pydantic
+python-dotenv
+typing-extensions
