@@ -6,6 +6,7 @@ from agents.tutor_agent import TutorAgent
 from dotenv import load_dotenv
 import logging
 from typing import List
+from mangum import Mangum
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -53,6 +54,8 @@ async def ask_question(request: QueryRequest):
     except Exception as e:
         logger.error(f"Error processing question: {request.question}, Error: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
+
+handler = Mangum(app)
 
 if __name__ == "__main__":
     import uvicorn
