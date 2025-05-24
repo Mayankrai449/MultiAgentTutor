@@ -6,7 +6,6 @@ from agents.tutor_agent import TutorAgent
 from dotenv import load_dotenv
 import logging
 from typing import List
-from mangum import Mangum
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -34,7 +33,6 @@ async def read_root():
         content = f.read()
     return HTMLResponse(content=content)
 
-
 @app.post("/ask", response_model=QueryResponse)
 async def ask_question(request: QueryRequest):
     try:
@@ -55,7 +53,14 @@ async def ask_question(request: QueryRequest):
         logger.error(f"Error processing question: {request.question}, Error: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
-handler = Mangum(app)
+# Health check endpoint
+@app.get("/health")
+async def health_check():
+    try:
+        return {"status": "ok", "message": "AI Tutor is running smoothly!"}
+    except Exception as e:
+        logger.error(f"Health check failed: {str(e)}")
+        raise HTTPException(status_code=500, detail="Health check failed")
 
 if __name__ == "__main__":
     import uvicorn

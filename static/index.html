@@ -8,20 +8,22 @@
 </head>
 <body>
     <div id="navbar">
-        <h1>AI Tutor Chat</h1>
+        <h1>MultiAgent Tutor</h1>
     </div>
     <div id="chat-container">
-        <div id="chat-box">
-            <div id="loading-indicator" class="hidden">
-                <div class="spinner"></div>
-            </div>
-
+    <div id="chat-box">
+        <div id="placeholder" class="placeholder">
+            Ask questions related to maths, physics, and chemistry.
         </div>
-        <div id="input-box">
-            <input type="text" id="user-query" placeholder="Ask your question..." />
-            <button id="ask-btn">Ask</button>
+        <div id="loading-indicator" class="hidden">
+            <div class="spinner"></div>
         </div>
     </div>
+    <div id="input-box">
+        <input type="text" id="user-query" placeholder="Ask your question..." />
+        <button id="ask-btn">Ask</button>
+    </div>
+</div>
     <script src="/static/js/app.js"></script>
 </body>
 </html>

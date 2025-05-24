@@ -3,6 +3,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const askBtn = document.getElementById('ask-btn');
     const loadingIndicator = document.getElementById('loading-indicator');
     const chatBox = document.getElementById('chat-box');
+    const placeholder = document.getElementById('placeholder');
 
     // Disable button initially if input is empty
     askBtn.disabled = !userQueryInput.value.trim();
@@ -20,6 +21,8 @@ document.addEventListener('DOMContentLoaded', () => {
     async function sendQuery() {
         const userQuery = userQueryInput.value.trim();
         if (!userQuery) return;
+
+        placeholder.style.display = 'none';
 
         userQueryInput.value = '';
         askBtn.disabled = true;

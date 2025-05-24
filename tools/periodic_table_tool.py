@@ -51,7 +51,6 @@ class PeriodicTableTool:
                 'description': 'Essential for life, supports combustion.',
                 'category': 'nonmetal', 'state': 'gas'
             },
-            # Adding more elements for better coverage
             'fluorine': {
                 'atomic_number': 9, 'atomic_mass': 18.998, 'symbol': 'F',
                 'group': 17, 'period': 2, 'electron_configuration': '[He] 2s² 2p⁵',

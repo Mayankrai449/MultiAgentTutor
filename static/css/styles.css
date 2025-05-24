@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@600&display=swap');
 body {
     font-family: Arial, sans-serif;
     background-color: #000;
@@ -15,15 +16,18 @@ body {
     background-color: #222;
     padding: 10px 20px;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 #navbar h1 {
     margin: 0;
-    font-size: 20px;
+    font-size: 24px;
     color: #fff;
-    text-align: left;
-    font-family: 'Roboto', sans-serif;
-    font-style: italic;
+    text-align: center;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 600;
 }
 
 #chat-container {
@@ -49,6 +53,19 @@ body {
     flex-direction: column-reverse;
     margin-bottom: 20px;
     position: relative;
+}
+
+#placeholder {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #bbb;
+    font-size: 16px;
+    font-style: italic;
+    text-align: center;
+    width: 100%;
+    pointer-events: none;
 }
 
 #input-box {
