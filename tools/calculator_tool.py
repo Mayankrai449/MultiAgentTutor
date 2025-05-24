@@ -3,7 +3,6 @@ import math
 from typing import Dict, Any
 
 class CalculatorTool:
-    #safe math functions
     def __init__(self):
         self.safe_functions = {
             'sin': math.sin,
@@ -16,11 +15,13 @@ class CalculatorTool:
             'abs': abs,
             'round': round,
             'pi': math.pi,
-            'e': math.e
+            'e': math.e,
+            'pow': math.pow
         }
     
     def _sanitize_expression(self, expression: str) -> str:
-        expression = re.sub(r'[^0-9+\-*/().\s]', '', expression)
+        # Allow numbers, basic operators, parentheses, and ** for exponentiation
+        expression = re.sub(r'[^0-9+\-*/().\s**]', '', expression)
         
         replacements = {
             'x': '*',
@@ -29,7 +30,10 @@ class CalculatorTool:
             'minus': '-',
             'times': '*',
             'divided by': '/',
-            'divide': '/'
+            'divide': '/',
+            'to the power of': '**',
+            'raised to': '**',
+            '^': '**'
         }
         
         for old, new in replacements.items():
@@ -87,8 +91,7 @@ class CalculatorTool:
             return f"{result:.2e}"
         else:
             return f"{result:.6f}".rstrip('0').rstrip('.')
-
-    #basic calc
+    
     def add(self, a: float, b: float) -> float:
         return a + b
     

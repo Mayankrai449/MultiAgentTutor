@@ -1,13 +1,16 @@
 from google import genai
 from typing import Dict, Any
+import re
 from tools.physics_constants_tool import PhysicsConstantsTool
+from tools.unit_converter_tool import UnitConverterTool
 
 class PhysicsAgent:
     def __init__(self, client: genai.Client):
         self.client = client
         self.constants_tool = PhysicsConstantsTool()
-        
-    def _needs_constants(self, query: str) -> bool:
+        self.unit_converter = UnitConverterTool()
+
+    def _needs_constants(self, query: str) -> bool:                     # check for physics constants
         constant_keywords = [
             'speed of light', 'light speed', 'c =',
             'gravitational constant', 'gravity constant', 'g =', 'G =',
@@ -15,15 +18,10 @@ class PhysicsAgent:
             'proton mass', 'neutron mass', 'elementary charge',
             'permittivity', 'permeability', 'constant'
         ]
-        
-        query_lower = query.lower()
-        return any(keyword in query_lower for keyword in constant_keywords)
-    
-    def _identify_constants_needed(self, query: str) -> list:
-        query_lower = query.lower()
-        needed_constants = []
+        return any(keyword in query.lower() for keyword in constant_keywords)
 
-        constant_mapping = {                                        # map keywords to constants
+    def _identify_constants_needed(self, query: str) -> list:           # identify which constants are needed
+        constant_mapping = {
             'speed of light': 'speed_of_light',
             'light speed': 'speed_of_light',
             'gravitational constant': 'gravitational_constant',
@@ -35,72 +33,58 @@ class PhysicsAgent:
             'proton mass': 'proton_mass',
             'elementary charge': 'elementary_charge'
         }
-        
-        for keyword, constant_name in constant_mapping.items():
-            if keyword in query_lower:
-                needed_constants.append(constant_name)
-        
-        return needed_constants
-    
-    async def handle_query(self, query: str) -> str:
-        try:
-            constants_info = ""
-            if self._needs_constants(query):
-                needed_constants = self._identify_constants_needed(query)
-                if needed_constants:
-                    constants_data = {}
-                    for constant in needed_constants:
-                        value = self.constants_tool.get_constant(constant)
-                        if value:
-                            constants_data[constant] = value
-                    
-                    if constants_data:
-                        constants_info = "Here are the relevant physics constants:\n"
-                        for name, data in constants_data.items():
-                            constants_info += f"- {data['name']}: {data['value']} {data['unit']}\n"
-                else:
-                    all_constants = self.constants_tool.get_all_constants()
-                    constants_info = "Here are some relevant physics constants:\n"
-                    for name, data in all_constants.items():
-                        constants_info += f"- {data['name']}: {data['value']} {data['unit']}\n"
+        return [constant_mapping[k] for k in constant_mapping if k in query.lower()]
 
-            if constants_info:
-                prompt = f"""
-                You are a physics tutor. A student asked: "{query}"
-                
-                {constants_info}
-                
-                Please provide a comprehensive response that:
-                1. Explains the physics concept clearly
-                2. Uses the relevant constants if needed for calculations
-                3. Shows step-by-step solutions if it's a problem
-                4. Provides educational context and real-world applications
-                5. Is clear and appropriate for a student learning physics
-                
-                Make your response engaging and educational.
-                """
-            else:
-                prompt = f"""
-                You are a physics tutor. Answer this student's physics question clearly and educationally.
-                
-                Student Question: {query}
-                
-                Provide:
-                1. A clear explanation of the physics concept
-                2. Step-by-step solution if it's a problem
-                3. Real-world examples and applications
-                4. Educational context
-                5. Any relevant formulas or principles
-                
-                Make your response engaging and appropriate for a student learning physics.
-                """
-            
-            response = self.client.models.generate_content(
-                model='gemini-2.0-flash-001',
-                contents=prompt
-            )
-            
-            return response.text
-            
-        except Exception as e:
-            return f"I'm sorry, I encountered an error while answering your physics question: {str(e)}"
+    def _needs_unit_conversion(self, query: str) -> bool:
+        patterns = [r'convert\s+\d+\s*\w+\s+to\s+\w+', r'\d+\s*\w+\s+in\s+\w+']
+        return any(re.search(pattern, query.lower()) for pattern in patterns)
+
+    def _extract_conversion(self, query: str) -> tuple:
+        match = re.search(r'convert\s+(\d+(?:\.\d+)?)\s*(\w+)\s+to\s+(\w+)', query.lower())
+        if match:
+            return float(match.group(1)), match.group(2), match.group(3)
+        match = re.search(r'(\d+(?:\.\d+)?)\s*(\w+)\s+in\s+(\w+)', query.lower())
+        if match:
+            return float(match.group(1)), match.group(2), match.group(3)
+        return None, None, None
+
+    async def handle_query(self, query: str) -> Dict[str, Any]:
+        tools_used = []
+        constants_info = ""
+        conversion_info = ""
+
+        if self._needs_constants(query):
+            needed = self._identify_constants_needed(query)
+            if needed:
+                constants_data = {c: self.constants_tool.get_constant(c) for c in needed if self.constants_tool.get_constant(c)}
+                if constants_data:
+                    constants_info = "Constants:\n" + "\n".join(
+                        f"- {data['name']}: {data['value']} {data['unit']}" for data, name in constants_data.items()
+                    )
+                    tools_used.append("Physics Constants")
+
+        if self._needs_unit_conversion(query):
+            value, from_unit, to_unit = self._extract_conversion(query)
+            if value is not None:
+                result = self.unit_converter.convert(value, from_unit, to_unit)
+                if result is not None:
+                    conversion_info = f"Conversion: {value} {from_unit} = {result} {to_unit}"
+                    tools_used.append("Unit Converter")
+
+        prompt = f"""
+        You are a physics tutor. A student asked: "{query}"
+
+        {constants_info}
+        {conversion_info}
+
+        Provide a response that:
+        1. Explains the concept
+        2. Uses provided data
+        3. Shows steps if needed
+        4. Is educational
+        """
+        response = self.client.models.generate_content(
+            model='gemini-2.0-flash-001',
+            contents=prompt
+        )
+        return {'answer': response.text, 'tools_used': tools_used}

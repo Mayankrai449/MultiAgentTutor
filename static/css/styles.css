@@ -161,6 +161,23 @@ body {
     word-wrap: break-word;
 }
 
+.message.agent .response {
+    margin-bottom: 10px;
+}
+
+.tools-info {
+    font-size: 0.85em;
+    font-style: italic;
+    color: #aaa;
+    background-color: #333;
+    padding: 6px 10px;
+    border-radius: 4px;
+    margin-top: 8px;
+    border-left: 3px solid #555;
+    max-width: 70%;
+    display: block;
+}
+
 @media (max-width: 600px) {
     #chat-box, #input-box {
         width: 90%;

@@ -18,51 +18,65 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     async function sendQuery() {
-    const userQuery = userQueryInput.value.trim();
-    if (!userQuery) return;
+        const userQuery = userQueryInput.value.trim();
+        if (!userQuery) return;
 
-    userQueryInput.value = '';
-    askBtn.disabled = true;
-    loadingIndicator.classList.remove('hidden');
+        userQueryInput.value = '';
+        askBtn.disabled = true;
+        loadingIndicator.classList.remove('hidden');
 
-    chatBox.classList.add('loading');
+        chatBox.classList.add('loading');
+        chatBox.scrollTop = 44;
 
-    chatBox.scrollTop = 44;
+        const userMessage = document.createElement('div');
+        userMessage.classList.add('message', 'user');
+        userMessage.innerHTML = `<div class="response">${userQuery}</div>`;
+        chatBox.insertBefore(userMessage, chatBox.firstChild);
 
-    const userMessage = document.createElement('div');
-    userMessage.classList.add('message', 'user');
-    userMessage.innerHTML = `<div class="response">${userQuery}</div>`;
-    chatBox.insertBefore(userMessage, chatBox.firstChild);
+        try {
+            const response = await fetch('/ask', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ question: userQuery })
+            });
 
-    try {
-        const response = await fetch('/ask', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ question: userQuery })
-        });
+            const data = await response.json();
+            console.log('API Response:', data);
 
-        const data = await response.json();
+            const agentMessage = document.createElement('div');
+            agentMessage.classList.add('message', 'agent');
+            
+            // tools info generation
+            let toolsInfo = '';
+            if (data.tools_used && data.tools_used.length > 0) {
+                toolsInfo = `<div class="tools-info">Tools used: ${data.tools_used.join(', ')}</div>`;
+                console.log('Rendering tools:', data.tools_used);
+            } else {
+                console.log('No tools used in response');
+            }
 
-        const agentMessage = document.createElement('div');
-        agentMessage.classList.add('message', 'agent');
-        agentMessage.innerHTML = `<div class="agent-name">${data.agent_used}:</div><div class="response">${formatAnswer(data.answer)}</div>`;
-        chatBox.insertBefore(agentMessage, chatBox.firstChild);
-    } catch (error) {
-        console.error('Error fetching response:', error);
-        const errorMessage = document.createElement('div');
-        errorMessage.classList.add('message', 'agent');
-        errorMessage.innerHTML = `<div class="agent-name">Error:</div><div class="response">Sorry, something went wrong. Please try again.</div>`;
-        chatBox.insertBefore(errorMessage, chatBox.firstChild);
-    } finally {
-        loadingIndicator.classList.add('hidden');
-        // remove margin once the indicator is hidden
-        chatBox.classList.remove('loading');
-        chatBox.scrollTop = 0;
-        askBtn.disabled = !userQueryInput.value.trim();
+            agentMessage.innerHTML = `
+                <div class="agent-name">${data.agent_used}:</div>
+                <div class="response">${formatAnswer(data.answer)}</div>
+                ${toolsInfo}
+            `;
+            chatBox.insertBefore(agentMessage, chatBox.firstChild);
+            
+        } catch (error) {
+            console.error('Error fetching response:', error);
+            const errorMessage = document.createElement('div');
+            errorMessage.classList.add('message', 'agent');
+            errorMessage.innerHTML = `<div class="agent-name">Error:</div><div class="response">Sorry, something went wrong. Please try again.</div>`;
+            chatBox.insertBefore(errorMessage, chatBox.firstChild);
+        } finally {
+            loadingIndicator.classList.add('hidden');
+            chatBox.classList.remove('loading');
+            chatBox.scrollTop = 0;
+            askBtn.disabled = !userQueryInput.value.trim();
+        }
     }
-}
 
     function formatAnswer(answer) {
         let formattedAnswer = answer.replace(/\n/g, '<br/>');
