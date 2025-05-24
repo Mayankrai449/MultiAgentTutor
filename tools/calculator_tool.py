@@ -8,32 +8,45 @@ class CalculatorTool:
             'sin': math.sin,
             'cos': math.cos,
             'tan': math.tan,
+            'asin': math.asin,
+            'acos': math.acos,
+            'atan': math.atan,
+            'sinh': math.sinh,
+            'cosh': math.cosh,
+            'tanh': math.tanh,
             'sqrt': math.sqrt,
             'log': math.log,
             'log10': math.log10,
+            'log2': math.log2,
             'exp': math.exp,
             'abs': abs,
             'round': round,
+            'floor': math.floor,
+            'ceil': math.ceil,
+            'factorial': math.factorial,
+            'gcd': math.gcd,
             'pi': math.pi,
             'e': math.e,
-            'pow': math.pow
+            'pow': math.pow,
+            'degrees': math.degrees,
+            'radians': math.radians
         }
     
     def _sanitize_expression(self, expression: str) -> str:
-        # Allow numbers, basic operators, parentheses, and ** for exponentiation
-        expression = re.sub(r'[^0-9+\-*/().\s**]', '', expression)
+        # Enhanced sanitization with more mathematical operations
+        expression = re.sub(r'[^0-9+\-*/().\s**×÷√π]', '', expression)
         
         replacements = {
-            'x': '*',
-            'X': '*',
-            'plus': '+',
-            'minus': '-',
-            'times': '*',
-            'divided by': '/',
-            'divide': '/',
+            'x': '*', 'X': '*',
+            '×': '*', '÷': '/',
+            'plus': '+', 'minus': '-',
+            'times': '*', 'multiplied by': '*',
+            'divided by': '/', 'divide': '/',
             'to the power of': '**',
             'raised to': '**',
-            '^': '**'
+            '^': '**',
+            '√': 'sqrt',
+            'π': str(math.pi)
         }
         
         for old, new in replacements.items():
@@ -65,6 +78,9 @@ class CalculatorTool:
                     'expression': expression
                 }
             
+            # Handle special mathematical functions
+            clean_expression = self._handle_special_functions(clean_expression)
+            
             # Perform the calculation
             result = self._safe_eval(clean_expression)
             
@@ -83,7 +99,24 @@ class CalculatorTool:
                 'expression': expression
             }
     
+    def _handle_special_functions(self, expression: str) -> str:
+        """Handle special mathematical functions and operations"""
+        # Handle percentage calculations
+        expression = re.sub(r'(\d+(?:\.\d+)?)\s*%', r'(\1/100)', expression)
+        
+        # Handle factorial
+        expression = re.sub(r'(\d+)!', r'factorial(\1)', expression)
+        
+        # Handle square root with sqrt() function
+        expression = re.sub(r'sqrt\(([^)]+)\)', r'sqrt(\1)', expression)
+        
+        return expression
+    
     def _format_result(self, result: float) -> str:
+        if math.isnan(result):
+            return "undefined"
+        if math.isinf(result):
+            return "infinity"
         if result.is_integer():
             return str(int(result))
         
@@ -92,19 +125,29 @@ class CalculatorTool:
         else:
             return f"{result:.6f}".rstrip('0').rstrip('.')
     
-    def add(self, a: float, b: float) -> float:
-        return a + b
-    
-    def subtract(self, a: float, b: float) -> float:
-        return a - b
-    
-    def multiply(self, a: float, b: float) -> float:
-        return a * b
-    
-    def divide(self, a: float, b: float) -> float:
-        if b == 0:
-            raise ValueError("Cannot divide by zero")
-        return a / b
-    
-    def power(self, base: float, exponent: float) -> float:
-        return base ** exponent
+    # Additional utility functions
+    def solve_quadratic(self, a: float, b: float, c: float) -> Dict[str, Any]:
+        """Solve quadratic equation ax² + bx + c = 0"""
+        discriminant = b**2 - 4*a*c
+        
+        if discriminant > 0:
+            x1 = (-b + math.sqrt(discriminant)) / (2*a)
+            x2 = (-b - math.sqrt(discriminant)) / (2*a)
+            return {
+                'solutions': [x1, x2],
+                'type': 'two_real_solutions',
+                'discriminant': discriminant
+            }
+        elif discriminant == 0:
+            x = -b / (2*a)
+            return {
+                'solutions': [x],
+                'type': 'one_real_solution',
+                'discriminant': discriminant
+            }
+        else:
+            return {
+                'solutions': [],
+                'type': 'no_real_solutions',
+                'discriminant': discriminant
+            }
